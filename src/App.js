@@ -80,14 +80,13 @@ class App extends Component {
       audio_muted: false,
       video_muted: false,
       share_muted:false,
-      room_name : ''
+      room_name : '',
+      user_name: '',
+      open_log: true,
     };
     this.getRender = this.getRender.bind(this);
-    this.addRoom = this.addRoom.bind(this);
+    // this.addRoom = this.addRoom.bind(this);
   }
-  handleClickOpen = () => {
-    setOpen(true);
-  };
 
   handleClose = () => {
     setOpen(false);
@@ -95,47 +94,41 @@ class App extends Component {
   componentDidMount = () => {
     
   }
-
-  handleClickOpen = () => {
-    this.setState({ open: true });
-  };
-
   addRoom = () => {
-      this.setState({room_name : $("#room_name").val()})
-      var url = 'wss://' + window.location.hostname + ':4443';
-      console.log(this.state);
-      this.signaling = new Signaling(url, $("#room_name").val());
-      this.signaling.on('peers',(peers, self) => {
-        this.setState({peers, self_id: self});
-      });
-      this.signaling.on("share_scree",(from, sessions) => {
-        console.log("This is the test of the screen share");
-      });
-      this.signaling.on('new_call',(from, sessios) => {
-        this.setState({ open:true });
-      });
+    this.setState({open_log: false});
+    console.log('test...', this.state);
+    let url = 'wss://' + window.location.hostname + ':4443';
+    this.signaling = new Signaling(url, $("#room_name").val());
+    this.signaling.on('peers',(peers, self) => {
+      this.setState({peers, self_id: self});
+    });
+    this.signaling.on("share_scree",(from, sessions) => {
+      console.log("This is the test of the screen share");
+    });
+    this.signaling.on('new_call',(from, sessios) => {
+      this.setState({ open:true });
+    });
 
-      this.signaling.on('localstream',(stream) => {
-        this.setState({localStream: stream});
-      });
+    this.signaling.on('localstream',(stream) => {
+      this.setState({localStream: stream});
+    });
 
-      this.signaling.on('addstream',(stream) => {
-        this.setState({remoteStream: stream});
-      });
+    this.signaling.on('addstream',(stream) => {
+      this.setState({remoteStream: stream});
+    });
 
-      this.signaling.on('removestream',(stream) => {
-        this.setState({remoteStream: null});
-      });
+    this.signaling.on('removestream',(stream) => {
+      this.setState({remoteStream: null});
+    });
 
-      this.signaling.on('call_end',(to, session) => {
-        this.setState({ open:false, localStream: null, remoteStream: null });
-      });
+    this.signaling.on('call_end',(to, session) => {
+      this.setState({ open:false, localStream: null, remoteStream: null });
+    });
 
-      this.signaling.on('leave',(to) => {
-        this.setState({ open:false, localStream: null, remoteStream: null });
-      });
+    this.signaling.on('leave',(to) => {
+      this.setState({ open:false, localStream: null, remoteStream: null });
+    });
       // setOpen(false);
-
   };
 
   handleInvitePeer = (peer_id, type) => {
@@ -156,13 +149,13 @@ class App extends Component {
   }
 
   onToggleLocalVideoTrack = (muted) => {
-    var videoTracks = this.state.localStream.getVideoTracks();
+    let videoTracks = this.state.localStream.getVideoTracks();
     if (videoTracks.length === 0) {
       console.log("No local video available.");
       return;
     }
     console.log("Toggling video mute state.");
-    for (var i = 0; i < videoTracks.length; ++i) {
+    for (let i = 0; i < videoTracks.length; ++i) {
       videoTracks[i].enabled = !muted;
     }
   }
@@ -177,13 +170,13 @@ class App extends Component {
   }
 
   onToggleLocalShareTrack = (muted) => {
-    // var shareTracks = this.state.localStream.getShareTracks();
+    let shareTracks = this.state.localStream.getShareTracks();
     if (shareTracks.length === 0) {
       console.log("No local share available.");
       return;
     }
     console.log("Toggling share mute state.");
-    for (var i = 0; i < shareTracks.length; ++i) {
+    for (let i = 0; i < shareTracks.length; ++i) {
       shareTracks[i].enabled = !muted;
     }
   }
@@ -198,41 +191,45 @@ class App extends Component {
   }
 
   getRender(){
-    if(this.state.room_name == ""){
-      return <Dialog open={open} aria-labelledby="form-dialog-title">
-              <DialogTitle id="form-dialog-title">Add Room Name</DialogTitle>
+    if(this.state.open_log) {
+      return <Dialog open={true} aria-labelledby="form-dialog-title">
               <DialogContent>
-                <DialogContentText>
-                  To create vdieo calling room please insert the room name.
-                </DialogContentText>
                 <TextField
                   autoFocus
                   margin="dense"
                   id="room_name"
                   label="Room Name"
                   type="Text"
-                  ref = "room_name"
-                  // onChange = {e => this.setState({...this.state, room_name: e.target.value})}
-                  fullWidth 
+                  onChange = {e => this.setState({...this.state, room_name: e.target.value ? e.target.value : ''})}
+                  fullWidth
+                />
+                <TextField
+                    autoFocus
+                    margin="dense"
+                    id="user_name"
+                    label="User Name"
+                    type="Text"
+                    onChange = {e => this.setState({...this.state, user_name: e.target.value ? e.target.value : ''})}
+                    fullWidth
                 />
               </DialogContent>
               <DialogActions>
-                <Button onClick={this.addRoom} color="primary">
+                {this.state.room_name.length && this.state.user_name.length && <Button onClick={this.addRoom} color="primary">
                   Add Room
                 </Button>
               </DialogActions>
             </Dialog>
-        }
+    }
   }
 
   onToggleLocalAudioTrack = (muted) => {
-    var audioTracks = this.state.localStream.getAudioTracks();
+    let audioTracks = this.state.localStream.getAudioTracks();
     if (audioTracks.length === 0) {
       console.log("No local audio available.");
       return;
     }
     console.log("Toggling audio mute state.");
-    for (var i = 0; i < audioTracks.length; ++i) {
+    for (let i = 0; i < audioTracks.length; ++i) {
       audioTracks[i].enabled = !muted;
     }
   }
@@ -248,8 +245,8 @@ class App extends Component {
               <IconButton className={classes.menuButton} color="inherit" aria-label="Menu">
                 <MenuIcon />
               </IconButton>
-              <Typography variant="title" color="inherit" className={classes.flex}>
-                Video/Audio Calling Room
+              <Typography letiant="title" color="inherit" className={classes.flex}>
+                meeting
             </Typography>
               {/* <Button color="inherit">Join</Button> */}
             </Toolbar>
@@ -269,11 +266,9 @@ class App extends Component {
                           <IconButton color="primary" onClick={() => this.handleInvitePeer(peer.id, 'video')} className={classes.button} aria-label="Make a video call.">
                             <VideoCamIcon />
                           </IconButton>
-                          {/* <IconButton color="primary" onClick={() =>this.onShareOnClickHandler(peer.id, 'share')} className={classes.button} aria-label="Make a video call.">
-                          {
-                            this.state.share_muted ? <StopScreenShareIcon /> : <ScreenShareIcon />
-                          }
-                          </IconButton> */}
+                          <IconButton color="primary" onClick={() =>this.onShareOnClickHandler(peer.id, 'share')} className={classes.button} aria-label="Make a video call.">
+                            { this.state.share_muted ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+                          </IconButton>
                         </div>
                       }
                     </ListItem>
@@ -291,7 +286,7 @@ class App extends Component {
           >
             <AppBar className={classes.appBar}>
               <Toolbar>
-                <Typography variant="title" color="inherit" className={classes.flex}>
+                <Typography letiant="title" color="inherit" className={classes.flex}>
                   Calling
               </Typography>
               </Toolbar>
@@ -305,20 +300,20 @@ class App extends Component {
               }
             </div>
             <div className={css.btnTools}>
-              <Button variant="fab" mini color="primary" aria-label="add" style={styles.btnTool} onClick={this.onVideoOnClickHandler}>
+              <Button letiant="fab" mini color="primary" aria-label="add" style={styles.btnTool} onClick={this.onVideoOnClickHandler}>
                 {
                   this.state.video_muted ? <VideoOffIcon /> : <VideoOnIcon />
                 }
               </Button>
-              <Button variant="fab" color="secondary" aria-label="add" style={styles.btnTool} onClick={this.handleBye}>
+              <Button letiant="fab" color="secondary" aria-label="add" style={styles.btnTool} onClick={this.handleBye}>
                 <PhoneIcon />
               </Button>
-              <Button variant="fab" mini color="primary" aria-label="add" style={styles.btnTool} onClick={this.onAudioClickHandler}>
+              <Button letiant="fab" mini color="primary" aria-label="add" style={styles.btnTool} onClick={this.onAudioClickHandler}>
                 {
                   this.state.audio_muted ? <MicOffIcon /> : <MicIcon />
                 }
               </Button>
-              <Button variant="fab" mini color="primary" aria-label="add" style={styles.btnTool} onClick={this.onShareOnClickHandler}>
+              <Button letiant="fab" mini color="primary" aria-label="add" style={styles.btnTool} onClick={this.onShareOnClickHandler}>
                 {
                   this.state.share_muted ? <StopScreenShareIcon /> : <ScreenShareIcon />
                 }
